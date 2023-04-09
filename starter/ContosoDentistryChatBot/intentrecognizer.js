@@ -1,4 +1,4 @@
-const {LuisRecognizer} = require('botbuilder-ai')
+const { LuisRecognizer } = require('botbuilder-ai');
 
 class IntentRecognizer {
     constructor(config) {
@@ -39,4 +39,4 @@ class IntentRecognizer {
     }
 }
 
-module.exports = IntentRecognizer
+module.exports = IntentRecognizer;
