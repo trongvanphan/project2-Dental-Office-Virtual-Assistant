@@ -52,5 +52,5 @@ jobs:
         with:
           app-name: 'trongwebappus2'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D7410B8A29C9498EB1A06F258E559339 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_EAD6778223304DADAD1EEA4D77F4D8EA }}
           package: .
