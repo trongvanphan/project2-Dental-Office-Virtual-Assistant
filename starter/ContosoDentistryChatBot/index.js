@@ -20,7 +20,7 @@ const { DentaBot } = require('./bot');
 // Create HTTP server
 const server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, () => {
-    console.log(`\n${ server.name } listening to ${ server.url }`);
+    console.log(`\n${server.name} listening to ${server.url}`);
     console.log('\nGet Bot Framework Emulator: https://aka.ms/botframework-emulator');
     console.log('\nTo talk to your bot, open the emulator select "Open Bot"');
 });
@@ -36,14 +36,13 @@ const adapter = new BotFrameworkAdapter({
 const onTurnErrorHandler = async (context, error) => {
     // This check writes out errors to console log .vs. app insights.
     // NOTE: In production environment, you should consider logging this to Azure
-    //       application insights. See https://aka.ms/bottelemetry for telemetry
-    //       configuration instructions.
-    console.error(`\n [onTurnError] unhandled error: ${ error }`);
+    //       application insights.
+    console.error(`\n [onTurnError] unhandled error: ${error}`);
 
     // Send a trace activity, which will be displayed in Bot Framework Emulator
     await context.sendTraceActivity(
         'OnTurnError Trace',
-        `${ error }`,
+        `${error}`,
         'https://www.botframework.com/schemas/error',
         'TurnError'
     );
@@ -58,30 +57,36 @@ adapter.onTurnError = onTurnErrorHandler;
 
 // Map configuration values values from .env file into the required format for each service.
 const QnAConfiguration = {
-    knowledgeBaseId: process.env.QnAKnowledgebaseId,
     endpointKey: process.env.QnAAuthKey,
     host: process.env.QnAEndpointHostName
 };
 
 const LuisConfiguration = {
-    applicationId: process.env.LuisAppId,
     endpointKey: process.env.LuisAPIKey,
-    endpoint: process.env.LuisAPIHostName
-};
+    endpoint: process.env.LuisAPIHostName,
+}
+
+const CLUConfiguration = {
+    CluEndpoint:process.env.LuisAPIHostName,
+    CluSubscriptionKey:process.env.LuisAPIKey,
+    CluProjectName:process.env.ProjectName,
+    CluDeploymentName:process.env.ModelName
+    
+}
 
 const SchedulerConfiguration = {
     SchedulerEndpoint: process.env.SchedulerEndpoint
-};
-
-// pack each service configuration into
+}
+//pack each service configuration into 
 const configuration = {
     QnAConfiguration,
     LuisConfiguration,
-    SchedulerConfiguration
-};
+    SchedulerConfiguration,
+    CLUConfiguration
+}
 
 // Create the main dialog.
-const myBot = new DentaBot(configuration, {});
+const myBot = new DentaBot(configuration);
 
 // Listen for incoming requests.
 server.post('/api/messages', (req, res) => {

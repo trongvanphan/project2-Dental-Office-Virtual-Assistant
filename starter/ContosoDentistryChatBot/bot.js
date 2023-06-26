@@ -14,71 +14,71 @@ class DentaBot extends ActivityHandler {
         if (!configuration) throw new Error('[QnaMakerBot]: Missing parameter. configuration is required');
 
         // create a QnAMaker connector
-        this.QnAMaker = new QnAMaker();
-
+        this.QnAMaker = new QnAMaker(configuration.QnAConfiguration, qnaOptions);
         // create a DentistScheduler connector
-        this.dentistscheduler = new DentistScheduler(configuration.SchedulerConfiguration);
-
-        // create a LUIS connector
-        this.intentRecognizer = new IntentRecognizer(configuration.LuisConfiguration);
+        this.DentistScheduler = new DentistScheduler(configuration.SchedulerConfiguration);
+      
+        // create a IntentRecognizer connector
+        this.IntentRecognizer = new IntentRecognizer(configuration.CLUConfiguration);
 
         this.onMessage(async (context, next) => {
             // send user input to QnA Maker and collect the response in a variable
             // don't forget to use the 'await' keyword
-            const qnaResults = await this.qnaMaker.getAnswers(context);
+            const qnaResults = await this.QnAMaker.getAnswers(context);
 
             // send user input to IntentRecognizer and collect the response in a variable
             // don't forget 'await'
-            const LuisResult = await this.intentRecognizer.executeLuisQuery(context);
+            const LuisResult = await this.IntentRecognizer.executeLuisQuery(context);
+                     
             // determine which service to respond with based on the results from LUIS //
+            
             // if(top intent is intentA and confidence greater than 50){
-            //  doSomething();
-            //  await context.sendActivity();
-            //  await next();
-            //  return;
-            // }
-            // else {...}
-            if (LuisResult.luisResult.prediction.topIntent === 'getAvailability' &&
-                LuisResult.intents.getAvailability.score > 0.6 &&
-                LuisResult.entities.$instance &&
-                LuisResult.entities.$instance.timeday &&
-                LuisResult.entities.$instance.timeday[0]
-            ) {
-                const timeday = LuisResult.entities.$instance.timeday[0].text;
+            if (LuisResult.prediction.topIntent === "GetAvailability" && 
+            LuisResult.prediction.intents[0].confidence>0.5 && LuisResult.prediction.entities[0]){
 
-                const getAvailableTime = 'I have a few spots for ' + timeday;
-                console.log(getAvailableTime);
+                const  available_slots = await this.DentistScheduler.getAvailability();
 
-                await context.sendActivity(getAvailableTime);
+                await context.sendActivity(available_slots);
+                await next();
+                return;
+            }
+            if (LuisResult.prediction.topIntent === "ScheduleAppointment" && 
+            LuisResult.prediction.intents[0].confidence>0.5 && LuisResult.prediction.entities[0]){
+
+                const time = this.IntentRecognizer.getTimeEntity(LuisResult)
+
+                const schedule_time = await this.DentistScheduler.scheduleAppointment(time);
+            
+                await context.sendActivity(MessageFactory.text(schedule_time,schedule_time));
                 await next();
                 return;
             }
 
-            // If an answer was received from QnA Maker, send the answer back to the user.
             if (qnaResults[0]) {
-                console.log(qnaResults[0]);
-                await context.sendActivity(`${ qnaResults[0].answer }`);
-            } else {
-                await context.sendActivity('I\'m not sure' +
-                     'I found an answer to your question' +
-                     'You can ask me questions about our dental services like "Do you treat children?\' or tell me what time you want an appointment like "today"');
+                await context.sendActivity(`${qnaResults[0].answer}`);
+            }
+            else {
+                // If no answers were returned from QnA Maker, reply with help.
+                await context.sendActivity(`I'm not sure I can answer your question`
+                    + 'I can schedule appointments for you based  our available slots'
+                    + `Or you can ask me questions about our services`);
             }
 
             await next();
-        });
+    });
 
         this.onMembersAdded(async (context, next) => {
-            const membersAdded = context.activity.membersAdded;
-            // write a custom greeting
-            const welcomeText = 'Hello and welcome to Dental Office Assistant!';
-            for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
-                if (membersAdded[cnt].id !== context.activity.recipient.id) {
-                    await context.sendActivity(MessageFactory.text(welcomeText, welcomeText));
-                }
+        const membersAdded = context.activity.membersAdded;
+        // write a custom greeting
+        const welcomeText = 'Hello and welcome to Dental Office Assistant!';
+        for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
+            if (membersAdded[cnt].id !== context.activity.recipient.id) {
+                await context.sendActivity(MessageFactory.text(welcomeText, welcomeText));
             }
-            // by calling next() you ensure that the next BotHandler is run.
-            await next();
-        });
+        }
+        // by calling next() you ensure that the next BotHandler is run.
+        await next();
+    });
     }
 }
 

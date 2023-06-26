@@ -8,6 +8,7 @@ class DentistScheduler {
                 responseText += `
 ${time}`
             })
+
             return responseText
         }
 
